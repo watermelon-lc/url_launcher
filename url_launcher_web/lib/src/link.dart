@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
+import 'dart:js_util';
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/foundation.dart';
@@ -13,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher_platform_interface/link.dart';
-import 'package:web/web.dart' as html;
+import 'package:web/helpers.dart' as html;
 
 /// The unique identifier for the view type to be used for link platform views.
 const String linkViewType = '__url_launcher::link';
@@ -173,7 +172,7 @@ class LinkViewController extends PlatformViewController {
 
   Future<void> _initialize() async {
     _element = html.document.createElement('a') as html.HTMLElement;
-    _element[linkViewIdProperty] = viewId.toJS;
+    setProperty(_element, linkViewIdProperty, viewId);
     _element.style
       ..opacity = '0'
       ..display = 'block'
@@ -284,7 +283,11 @@ class LinkViewController extends PlatformViewController {
 int? getViewIdFromTarget(html.Event event) {
   final html.Element? linkElement = getLinkElementFromTarget(event);
   if (linkElement != null) {
-    return linkElement.getProperty<JSNumber>(linkViewIdProperty.toJS).toDartInt;
+    // TODO(stuartmorgan): Remove this ignore (and change to getProperty<int>)
+    // once the templated version is available on stable. On master (2.8) this
+    // is already not necessary.
+    // ignore: return_of_invalid_type
+    return getProperty(linkElement, linkViewIdProperty);
   }
   return null;
 }
@@ -313,5 +316,5 @@ html.Element? getLinkElementFromTarget(html.Event event) {
 bool isLinkElement(html.Element? element) {
   return element != null &&
       element.tagName == 'A' &&
-      element.hasProperty(linkViewIdProperty.toJS).toDart;
+      hasProperty(element, linkViewIdProperty);
 }

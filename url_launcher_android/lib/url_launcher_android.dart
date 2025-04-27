@@ -79,6 +79,7 @@ class UrlLauncherAndroid extends UrlLauncherPlatform {
       case PreferredLaunchMode.inAppWebView:
       case PreferredLaunchMode.inAppBrowserView:
         inApp = true;
+        break;
       case PreferredLaunchMode.externalApplication:
       case PreferredLaunchMode.externalNonBrowserApplication:
         // TODO(stuartmorgan): Add full support for
@@ -86,6 +87,7 @@ class UrlLauncherAndroid extends UrlLauncherPlatform {
         // https://github.com/flutter/flutter/issues/66721.
         // Currently it's treated the same as externalApplication.
         inApp = false;
+        break;
       case PreferredLaunchMode.platformDefault:
       // Intentionally treat any new values as platformDefault; see comment in
       // supportsMode.
@@ -99,23 +101,17 @@ class UrlLauncherAndroid extends UrlLauncherPlatform {
     final bool succeeded;
     if (inApp) {
       succeeded = await _hostApi.openUrlInApp(
-        url,
-        // Prefer custom tabs unless a webview was specifically requested.
-        options.mode != PreferredLaunchMode.inAppWebView,
-        WebViewOptions(
-          enableJavaScript: options.webViewConfiguration.enableJavaScript,
-          enableDomStorage: options.webViewConfiguration.enableDomStorage,
-          headers: options.webViewConfiguration.headers,
-        ),
-        BrowserOptions(
-          showTitle: options.browserConfiguration.showTitle,
-        ),
-      );
+          url,
+          // Prefer custom tabs unless a webview was specifically requested.
+          options.mode != PreferredLaunchMode.inAppWebView,
+          WebViewOptions(
+              enableJavaScript: options.webViewConfiguration.enableJavaScript,
+              enableDomStorage: options.webViewConfiguration.enableDomStorage,
+              headers: options.webViewConfiguration.headers));
     } else {
       succeeded =
           await _hostApi.launchUrl(url, options.webViewConfiguration.headers);
     }
-
     // TODO(stuartmorgan): Remove this special handling as part of a
     // breaking change to rework failure handling across all platform. The
     // current behavior is backwards compatible with the previous Java error.
@@ -124,7 +120,6 @@ class UrlLauncherAndroid extends UrlLauncherPlatform {
           code: 'ACTIVITY_NOT_FOUND',
           message: 'No Activity found to handle intent { $url }');
     }
-
     return succeeded;
   }
 

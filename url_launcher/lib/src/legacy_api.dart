@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
@@ -87,14 +85,15 @@ Future<bool> launch(
 
   /// [true] so that ui is automatically computed if [statusBarBrightness] is set.
   bool previousAutomaticSystemUiAdjustment = true;
-  final RenderView? renderViewToAdjust =
-      statusBarBrightness != null && defaultTargetPlatform == TargetPlatform.iOS
-          ? _findImplicitRenderView()
-          : null;
-  if (renderViewToAdjust != null) {
-    previousAutomaticSystemUiAdjustment =
-        renderViewToAdjust.automaticSystemUiAdjustment;
-    renderViewToAdjust.automaticSystemUiAdjustment = false;
+  if (statusBarBrightness != null &&
+      defaultTargetPlatform == TargetPlatform.iOS &&
+      _ambiguate(WidgetsBinding.instance) != null) {
+    previousAutomaticSystemUiAdjustment = _ambiguate(WidgetsBinding.instance)!
+        .renderView
+        .automaticSystemUiAdjustment;
+    _ambiguate(WidgetsBinding.instance)!
+        .renderView
+        .automaticSystemUiAdjustment = false;
     SystemChrome.setSystemUIOverlayStyle(statusBarBrightness == Brightness.light
         ? SystemUiOverlayStyle.dark
         : SystemUiOverlayStyle.light);
@@ -111,9 +110,11 @@ Future<bool> launch(
     webOnlyWindowName: webOnlyWindowName,
   );
 
-  if (renderViewToAdjust != null) {
-    renderViewToAdjust.automaticSystemUiAdjustment =
-        previousAutomaticSystemUiAdjustment;
+  if (statusBarBrightness != null &&
+      _ambiguate(WidgetsBinding.instance) != null) {
+    _ambiguate(WidgetsBinding.instance)!
+        .renderView
+        .automaticSystemUiAdjustment = previousAutomaticSystemUiAdjustment;
   }
 
   return result;
@@ -145,22 +146,8 @@ Future<void> closeWebView() async {
   return UrlLauncherPlatform.instance.closeWebView();
 }
 
-/// Returns the [RenderView] associated with the implicit [FlutterView], if any.
+/// This allows a value of type T or T? to be treated as a value of type T?.
 ///
-/// [launch] predates multi-window support, and it doesn't have enough context
-/// to get the right render view, so this assumes anyone still trying to use
-/// the deprecated API with `statusBarBrightness` is in a single-view scenario.
-/// This allows a best-effort implementation of the deprecated API for as long
-/// as it continues to exist, without depending on deprecated Flutter APIs (and
-/// therefore keeping url_launcher forward-compatible with future versions of
-/// Flutter for longer).
-RenderView? _findImplicitRenderView() {
-  final FlutterView? implicitFlutterView =
-      WidgetsBinding.instance.platformDispatcher.implicitView;
-  if (implicitFlutterView == null) {
-    return null;
-  }
-  return WidgetsBinding.instance.renderViews
-      .where((RenderView v) => v.flutterView == implicitFlutterView)
-      .firstOrNull;
-}
+/// We use this so that APIs that have become non-nullable can still be used
+/// with `!` and `?` on the stable branch.
+T? _ambiguate<T>(T? value) => value;

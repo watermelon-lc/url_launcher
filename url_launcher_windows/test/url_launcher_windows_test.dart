@@ -47,7 +47,7 @@ void main() {
       api.canLaunch = true;
 
       expect(
-          await plugin.launch(
+          plugin.launch(
             'http://example.com/',
             useSafariVC: true,
             useWebView: false,
@@ -56,29 +56,12 @@ void main() {
             universalLinksOnly: false,
             headers: const <String, String>{},
           ),
-          true);
+          completes);
       expect(api.argument, 'http://example.com/');
     });
 
     test('handles failure', () async {
       api.canLaunch = false;
-
-      expect(
-          await plugin.launch(
-            'http://example.com/',
-            useSafariVC: true,
-            useWebView: false,
-            enableJavaScript: false,
-            enableDomStorage: false,
-            universalLinksOnly: false,
-            headers: const <String, String>{},
-          ),
-          false);
-      expect(api.argument, 'http://example.com/');
-    });
-
-    test('handles errors', () async {
-      api.throwError = true;
 
       await expectLater(
           plugin.launch(
@@ -139,14 +122,11 @@ class _FakeUrlLauncherApi implements UrlLauncherApi {
   /// The argument that was passed to an API call.
   String? argument;
 
-  /// Controls the behavior of the fake canLaunch implementations.
+  /// Controls the behavior of the fake implementations.
   ///
   /// - [canLaunchUrl] returns this value.
-  /// - [launchUrl] returns this value if [throwError] is false.
+  /// - [launchUrl] throws if this is false.
   bool canLaunch = false;
-
-  /// Whether to throw a platform exception.
-  bool throwError = false;
 
   @override
   Future<bool> canLaunchUrl(String url) async {
@@ -155,11 +135,10 @@ class _FakeUrlLauncherApi implements UrlLauncherApi {
   }
 
   @override
-  Future<bool> launchUrl(String url) async {
+  Future<void> launchUrl(String url) async {
     argument = url;
-    if (throwError) {
+    if (!canLaunch) {
       throw PlatformException(code: 'Failed');
     }
-    return canLaunch;
   }
 }

@@ -3,13 +3,14 @@
 // found in the LICENSE file.
 
 import 'dart:js_interop';
+import 'dart:js_util';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:mockito/mockito.dart' show Mock, any, verify, when;
+import 'package:mockito/mockito.dart' show any, verify, when, Mock;
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:url_launcher_web/url_launcher_web.dart';
-import 'package:web/web.dart' as html;
+import 'package:web/helpers.dart' as html;
 
 abstract class MyWindow {
   html.Window? open(Object? a, Object? b, Object? c);
@@ -32,7 +33,6 @@ void main() {
   group('UrlLauncherPlugin', () {
     late MockWindow mockWindow;
     late MockNavigator mockNavigator;
-    late html.Window jsMockWindow;
 
     late UrlLauncherPlugin plugin;
 
@@ -40,9 +40,10 @@ void main() {
       mockWindow = MockWindow();
       mockNavigator = MockNavigator();
 
-      jsMockWindow = createJSInteropWrapper(mockWindow) as html.Window;
+      final html.Window jsMockWindow =
+          createDartExport(mockWindow) as html.Window;
       final html.Navigator jsMockNavigator =
-          createJSInteropWrapper(mockNavigator) as html.Navigator;
+          createDartExport(mockNavigator) as html.Navigator;
 
       when(mockWindow.navigator).thenReturn(jsMockNavigator);
 
@@ -52,7 +53,7 @@ void main() {
       when(mockNavigator.userAgent).thenReturn(
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
 
-      plugin = UrlLauncherPlugin(debugWindow: jsMockWindow);
+      plugin = UrlLauncherPlugin(debugWindow: mockWindow as html.Window);
     });
 
     group('canLaunch', () {
@@ -184,7 +185,7 @@ void main() {
           when(mockNavigator.userAgent).thenReturn(
               'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15');
           // Recreate the plugin, so it grabs the overrides from this group
-          plugin = UrlLauncherPlugin(debugWindow: jsMockWindow);
+          plugin = UrlLauncherPlugin(debugWindow: mockWindow as html.Window);
         });
 
         testWidgets('http urls should be launched in a new window',

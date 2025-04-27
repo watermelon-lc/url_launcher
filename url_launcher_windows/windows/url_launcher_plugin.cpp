@@ -97,7 +97,8 @@ ErrorOr<bool> UrlLauncherPlugin::CanLaunchUrl(const std::string& url) {
   return has_handler;
 }
 
-ErrorOr<bool> UrlLauncherPlugin::LaunchUrl(const std::string& url) {
+std::optional<FlutterError> UrlLauncherPlugin::LaunchUrl(
+    const std::string& url) {
   std::wstring url_wide = Utf16FromUtf8(url);
 
   int status = static_cast<int>(reinterpret_cast<INT_PTR>(
@@ -106,18 +107,12 @@ ErrorOr<bool> UrlLauncherPlugin::LaunchUrl(const std::string& url) {
 
   // Per ::ShellExecuteW documentation, anything >32 indicates success.
   if (status <= 32) {
-    if (status == SE_ERR_NOASSOC) {
-      // NOASSOC just means there's nothing registered to handle launching;
-      // return false rather than an error for better consistency with other
-      // platforms.
-      return false;
-    }
     std::ostringstream error_message;
     error_message << "Failed to open " << url << ": ShellExecute error code "
                   << status;
     return FlutterError("open_error", error_message.str());
   }
-  return true;
+  return std::nullopt;
 }
 
 }  // namespace url_launcher_windows
