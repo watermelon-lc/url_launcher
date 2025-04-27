@@ -30,8 +30,7 @@ dependencies:
     sdk: flutter
   url_launcher_android: ^6.0.13
   url_launcher_ios:
-    git: https://github.com/watermelon-lc/url_launcher.git
-    path: "url_launcher_ios"
+    git: https://github.com/watermelon-lc/url_launcher_ios.git
   # Allow either the pure-native or Dart/native hybrid versions of the desktop
   # implementations, as both are compatible.
   url_launcher_linux: ">=2.0.0 <4.0.0"
